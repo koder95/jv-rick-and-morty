@@ -7,8 +7,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import mate.academy.rickandmorty.dto.external.ExternalResponseDto;
@@ -26,14 +24,14 @@ import tools.jackson.databind.ObjectMapper;
 public class ImportServiceImpl implements ImportService {
     private static final String CHARACTER_URI = "https://rickandmortyapi.com/api/character";
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
     private final CharacterService characterService;
     private final CharacterMapper characterMapper;
 
     @Override
     public void importCharacters() {
-        log.info("Importing characters from external service...");
+        log.info("Importing characters from external service");
         nextResults(sendRequest(CHARACTER_URI)).forEach(characterService::save);
     }
 
@@ -41,15 +39,15 @@ public class ImportServiceImpl implements ImportService {
         if (responseDto == null) {
             return List.of();
         }
+        List<CharacterDto> results = new ArrayList<>(getResultsFromResponse(responseDto));
         String next = getNextUriFromResponse(responseDto);
         if (next == null) {
-            return List.of();
+            return List.copyOf(results);
         }
-        List<CharacterDto> results = new ArrayList<>(getResultsFromResponse(responseDto));
         ExternalResponseDto nextResponseDto = sendRequest(next);
         List<CharacterDto> nextResults = nextResults(nextResponseDto);
         results.addAll(nextResults);
-        return results;
+        return List.copyOf(results);
     }
 
     private String getNextUriFromResponse(ExternalResponseDto responseDto) {
@@ -67,7 +65,7 @@ public class ImportServiceImpl implements ImportService {
                 .GET()
                 .uri(URI.create(uri))
                 .build();
-        log.info("HTTP request created: {}", request);
+        log.debug("HTTP request created: {}", request);
         HttpResponse.BodyHandler<String> bodyHandler = HttpResponse.BodyHandlers.ofString();
         String body;
         try {
@@ -81,7 +79,7 @@ public class ImportServiceImpl implements ImportService {
             );
         }
         ExternalResponseDto result = objectMapper.readValue(body, ExternalResponseDto.class);
-        log.info("Received response: {}", result);
+        log.debug("Received response: {}", result);
         return result;
     }
 }

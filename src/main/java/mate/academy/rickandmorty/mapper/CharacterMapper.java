@@ -16,6 +16,7 @@ public interface CharacterMapper {
     CharacterInfo toModel(CharacterDto characterDto);
 
     @Mapping(source = "id", target = "externalId")
+    @Mapping(target = "id", ignore = true)
     CharacterDto toInternal(mate.academy.rickandmorty.dto.external.CharacterDto characterDto);
 
     @Mapping(source = "gender", target = "gender", qualifiedByName = "formatGender")
