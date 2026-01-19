@@ -30,7 +30,7 @@ public class CharacterServiceImpl implements CharacterService {
         long lastId = characterRepository.getLastId();
         long randomId = random.nextLong(1, lastId + 1);
         while (!characterRepository.existsById(randomId)) {
-            randomId = random.nextLong(lastId);
+            randomId = random.nextLong(1, lastId + 1);
         }
         CharacterInfo byId = characterRepository.getReferenceById(randomId);
         return characterMapper.toDto(byId);

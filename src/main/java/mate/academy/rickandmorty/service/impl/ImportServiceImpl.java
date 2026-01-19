@@ -32,7 +32,13 @@ public class ImportServiceImpl implements ImportService {
     @Override
     public void importCharacters() {
         log.info("Importing characters from external service");
-        nextResults(sendRequest(CHARACTER_URI)).forEach(characterService::save);
+        ExternalResponseDto firstPageResults = null;
+        try {
+            firstPageResults = sendRequest(CHARACTER_URI);
+        } catch (Exception e) {
+            log.error(e);
+        }
+        nextResults(firstPageResults).forEach(characterService::save);
     }
 
     private List<CharacterDto> nextResults(ExternalResponseDto responseDto) {
@@ -44,9 +50,13 @@ public class ImportServiceImpl implements ImportService {
         if (next == null) {
             return List.copyOf(results);
         }
-        ExternalResponseDto nextResponseDto = sendRequest(next);
-        List<CharacterDto> nextResults = nextResults(nextResponseDto);
-        results.addAll(nextResults);
+        try {
+            ExternalResponseDto nextResponseDto = sendRequest(next);
+            List<CharacterDto> nextResults = nextResults(nextResponseDto);
+            results.addAll(nextResults);
+        } catch (Exception e) {
+            log.error(e);
+        }
         return List.copyOf(results);
     }
 
@@ -60,7 +70,7 @@ public class ImportServiceImpl implements ImportService {
                 .toList();
     }
 
-    private ExternalResponseDto sendRequest(String uri) {
+    private ExternalResponseDto sendRequest(String uri) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(uri))
